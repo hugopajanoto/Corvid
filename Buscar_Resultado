@@ -1,0 +1,117 @@
+import wixData from 'wix-data';
+
+const HL_COLOR = "rgba(190,190,250)";
+const REG_COLOR = "rgba(255,255,255)";
+
+let listSize;
+let currIndex = -1;
+
+$w.onReady(function () {
+
+	$w('#ddPesq').onKeyPress((event) => {
+		setTimeout(() => {
+			if ($w('#ddPesq').value.length === 0) {
+				currIndex = -1;
+				$w("#rptDropdown").collapse()
+					.then(() => {
+						console.log("Done with collapse");
+					});
+			} else {
+
+				switch (event.key) {
+				case "Enter":
+					$w('#ddPesq').value = $w('#rptDropdown').data[currIndex].title;
+					$w("#rptDropdown").collapse()
+						.then(() => {
+							console.log("Done with collapse");
+						});
+					break;
+				case "ArrowLeft":
+				case "ArrowRight":
+					break;
+				case "ArrowUp":
+					if (currIndex > 0) {
+						currIndex -= 1;
+						refresh_repeater();
+					}
+					break;
+				case "ArrowDown":
+					if (currIndex < listSize - 1) {
+						currIndex += 1;
+						refresh_repeater();
+					}
+					break;
+				case "Escape":
+					$w('#ddPesq').value = '';
+					currIndex = -1;
+					$w("#rptDropdown").collapse()
+						.then(() => {
+							console.log("Done with collapse");
+						});
+					break;
+				default:
+					currIndex = -1;
+					wixData.query("ASSEMBLEIA1")
+						.startsWith("grupo", $w('#ddPesq').value)
+						.ascending("grupo")
+						.limit(1)
+						.find()
+						.then((res) => {
+							$w('#rptDropdown').data = [];
+							$w('#rptDropdown').data = res.items;
+							listSize = res.items.length;
+							$w('#rptDropdown').expand();
+						});
+					break;
+				}
+			}
+		}, 50)
+	});
+});
+
+export function rptDropdown_itemReady($item, itemData, index) {
+	$item('#name').text = itemData.title;
+
+	if (index === currIndex) {
+		$item("#rptBox").style.backgroundColor = HL_COLOR;
+	} else {
+		$item("#rptBox").style.backgroundColor = REG_COLOR;
+	}
+
+	$item('#container1').onClick(() => {
+		$w('#ddPesq').value = itemData.title;
+		$w('#rptDropdown').collapse();
+	});
+}
+
+function refresh_repeater() {
+	$w("#rptDropdown").forEachItem(($item, itemData, index) => {
+		
+		$item('#name').text = itemData.title;
+
+		if (index === currIndex) {
+			$item("#rptBox").style.backgroundColor = HL_COLOR;
+		} else {
+			$item("#rptBox").style.backgroundColor = REG_COLOR;
+		}
+
+		$item('#container1').onClick(() => {
+			$w('#ddPesq').value = itemData.title;
+			$w('#rptDropdown').collapse();
+		});
+	});
+}
+
+export function ddFiltro_change(pesquisa) {
+	filtro($w("#ddFiltro").value);
+
+}
+
+export function ddPesq_keyPress(pesquisa) {
+	filtro($w("#ddPesq").value); 
+}
+
+function filtro(pesquisa) {
+	$w('#dataset1').setFilter(wixData.filter().contains('grupo', pesquisa));
+}
+	
